@@ -16,15 +16,15 @@ const TITULO_CAMPANHA = "As Crônicas de Sábado";   // nome da campanha (portã
    criadas no Firebase (Authentication) e as constantes SENHA abaixo são ignoradas.
    A apiKey NÃO é segredo: quem protege os dados são as regras do banco. */
 const FIREBASE = {
-  apiKey: "",
-  databaseURL: "",                       // ex.: https://rpg-vito-default-rtdb.firebaseio.com
+  apiKey: "AIzaSyAfE9Wy8Jtsfq2ipUhRpxge9BK3oSY1MLs",
+  databaseURL: "https://rpg-vito-banco-default-rtdb.firebaseio.com",
   contaMesa: "mesa@rpgvito.app",         // e-mail da conta dos jogadores
   contaMestre: "mestre@rpgvito.app"      // e-mail da conta do mestre
 };
 
 /* Senhas usadas SÓ enquanto o Firebase estiver vazio. Depois de configurá-lo, troque por "". */
-const SENHA = "taverna";                          // senha dos jogadores
-const SENHA_MESTRE = "mestre";                    // senha da tela do mestre
+const SENHA = "";                                 // senha dos jogadores (sem Firebase)
+const SENHA_MESTRE = "";                          // senha do mestre (sem Firebase)
 
 const JOGADORES = [                               // nomes dos 7 slots
   "Jogador 1",
@@ -1593,7 +1593,7 @@ async function puxarFicha(i) {
     if (rem && rem.ficha && (rem.t || 0) > tl) {
       ficha = normalizar(rem.ficha); store.set(kFicha(i), ficha); store.set(kFichaT(i), rem.t);
       renderFicha(); toast('Ficha sincronizada da nuvem.', 'ok');
-    } else if (tl && (!rem || (rem.t || 0) < tl)) enviarFicha();
+    } else if ((tl && (!rem || (rem.t || 0) < tl)) || (!rem && store.get(kFicha(i), null))) enviarFicha();
     estadoSalvo(null);
   } catch (e) { tratarErroNuvem(e); }
 }
@@ -1611,6 +1611,7 @@ function publicarRolagem(r) {
 }
 
 /* ============================ tela do mestre ============================ */
+let feedUltimoT = 0, tickMestre = 0;
 let mestre = { monstros: [], notas: '' }, timerMestre = null, feedDados = [], feedAssin = '', pjAssin = '';
 const hora = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 function normMonstro(m) {
@@ -1637,7 +1638,7 @@ async function puxarMestre() {
     if (papel !== 'mestre') return;
     const tl = store.get(K_MESTRE_T, 0);
     if (rem && rem.dados && (rem.t || 0) > tl) { mestre = normMestre(rem.dados); store.set(K_MESTRE, mestre); store.set(K_MESTRE_T, rem.t); renderMestre(); }
-    else if (tl && (!rem || (rem.t || 0) < tl)) enviarMestre();
+    else if ((tl && (!rem || (rem.t || 0) < tl)) || (!rem && store.get(K_MESTRE, null))) enviarMestre();
   } catch (e) { tratarErroNuvem(e); }
 }
 function entrarMestre() {
@@ -1650,12 +1651,12 @@ function entrarMestre() {
   $('#hdrNome').textContent = 'Mestre'; $('#hdrJog').textContent = 'Tela do mestre';
   $('#feedAviso').hidden = $('#pjAviso').hidden = nuvem.ativo();
   $('#feedFiltro').innerHTML = '<option value="">Todos os jogadores</option>' + JOGADORES.map((n, i) => `<option value="${i}">${esc(n)}</option>`).join('') + '<option value="-1">Mestre</option>';
-  feedAssin = pjAssin = '';
+  feedAssin = pjAssin = ''; feedUltimoT = 0; feedDados = [];
   renderMestre(); renderHist(); montarSelectAttr(); estadoSalvo(null); atualizarIndicadorNuvem();
   $('#stage').innerHTML = '<div class="stage-idle">Os dados aguardam o seu destino...</div>'; $('#stage').classList.remove('crit', 'falha');
   irAba(store.get(K_ABA + '.m', 'm-rolagens'));
   clearInterval(timerMestre);
-  timerMestre = setInterval(() => { if (document.hidden || papel !== 'mestre') return; const a = abaAtual(); if (a === 'm-rolagens') atualizarFeed(); else if (a === 'm-jogadores') carregarJogadores(); }, 4000);
+  timerMestre = setInterval(() => { if (document.hidden || papel !== 'mestre') return; const a = abaAtual(); if (a === 'm-rolagens') atualizarFeed(); else if (a === 'm-jogadores' && ++tickMestre % 3 === 0) carregarJogadores(); }, 4000);
   puxarMestre();
   window.scrollTo(0, 0);
 }
@@ -1673,7 +1674,15 @@ function feedLocal() {
 async function atualizarFeed() {
   let lista;
   if (nuvem.ligado()) {
-    try { const d = await nuvem.req('GET', 'rolagens', undefined, '&orderBy=%22t%22&limitToLast=150'); lista = Object.entries(d || {}).map(([id, r]) => ({ ...normRolagem(r), id })); }
+    try {
+      const q = feedUltimoT ? `&orderBy=%22t%22&startAt=${feedUltimoT}` : '&orderBy=%22t%22&limitToLast=150';
+      const d = await nuvem.req('GET', 'rolagens', undefined, q);
+      const novos = Object.entries(d || {}).map(([id, r]) => ({ ...normRolagem(r), id }));
+      const mapa = new Map((feedUltimoT ? feedDados.filter(r => r.id) : []).map(r => [r.id, r]));
+      novos.forEach(r => mapa.set(r.id, r));
+      lista = [...mapa.values()].sort((a, b) => b.t - a.t).slice(0, 300);
+      if (lista.length) feedUltimoT = Math.max(feedUltimoT, lista[0].t);
+    }
     catch (e) { tratarErroNuvem(e); lista = feedLocal(); }
   } else lista = feedLocal();
   lista.sort((a, b) => b.t - a.t); feedDados = lista; renderFeed();
@@ -1812,7 +1821,7 @@ function ligarMestre() {
     if (!await confirmar('Limpar rolagens', nuvem.ligado() ? 'Apagar o histórico de rolagens de TODOS os jogadores no servidor?' : 'Apagar o histórico de rolagens salvo neste aparelho?', 'Apagar')) return;
     if (nuvem.ligado()) { try { await nuvem.req('DELETE', 'rolagens'); } catch (e) { tratarErroNuvem(e); toast('Não foi possível limpar no servidor.', 'erro'); return; } }
     else { JOGADORES.forEach((_, i) => store.del(kHist(i))); }
-    store.del(kHist('mestre')); hist = []; renderHist(); feedAssin = ''; atualizarFeed();
+    store.del(kHist('mestre')); hist = []; renderHist(); feedAssin = ''; feedUltimoT = 0; feedDados = []; atualizarFeed();
   });
 }
 function atualizarBarraMonstro(card, m) {
