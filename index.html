@@ -550,6 +550,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .modal-box p{margin:0 0 18px;color:var(--ink-2);overflow-wrap:anywhere}
 .modal-btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .modal-btns .btn{flex:1 1 140px}
+.sentar-campo{display:block;margin:0 0 14px}
 .toasts{position:fixed;left:50%;top:calc(var(--header-h) + 12px);z-index:90;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px);transform:translateX(-50%);pointer-events:none}
 .toast{padding:12px 16px;border-radius:6px;color:var(--light);font-size:1rem;background:linear-gradient(180deg,#3a2615,#1d130a);border:1px solid var(--gold-3);border-left:4px solid var(--gold);
   box-shadow:0 10px 24px rgba(0,0,0,.6);animation:toastIn .3s ease both}
@@ -768,7 +769,8 @@ select.inp{appearance:auto;padding:6px 4px}
           <h2 class="sec-title"><svg class="ic"><use href="#i-helm"/></svg>Status do Herói</h2>
           <p class="sec-sub">Quem é você nesta jornada.</p>
           <div class="grid-id">
-            <label class="c6"><span class="lbl">Nome</span><input class="inp nome" data-f="nome" placeholder="Nome do personagem" maxlength="80"></label>
+            <label class="c6"><span class="lbl">Jogador</span><input class="inp" data-f="jogador" placeholder="Seu nome" maxlength="40"></label>
+            <label class="c6"><span class="lbl">Personagem</span><input class="inp nome" data-f="nome" placeholder="Nome do personagem" maxlength="80"></label>
             <label class="c3 m2"><span class="lbl">Classe</span><input class="inp" data-f="classe" placeholder="Guerreiro"></label>
             <label class="c3 m2"><span class="lbl">Raça</span><input class="inp" data-f="raca" placeholder="Anão"></label>
             <label class="c6 m2"><span class="lbl">Nível</span><input class="inp" data-f="nivel" data-t="num" type="number" inputmode="numeric" min="0"></label>
@@ -983,6 +985,15 @@ select.inp{appearance:auto;padding:6px 4px}
     <div class="modal-btns"><button class="btn ghost" id="modalNao" type="button">Cancelar</button><button class="btn" id="modalSim" type="button">Confirmar</button></div>
   </div>
 </div>
+<div class="modal" id="sentar" hidden role="dialog" aria-modal="true" aria-labelledby="sentarTitulo">
+  <form class="modal-box panel" id="sentarForm" autocomplete="off">
+    <h3 id="sentarTitulo">Tome seu assento</h3>
+    <p>Quem está sentando aqui, e quem você vai interpretar?</p>
+    <label class="sentar-campo"><span class="lbl">Seu nome</span><input class="inp" id="sentarJog" maxlength="40" placeholder="Seu nome" required></label>
+    <label class="sentar-campo"><span class="lbl">Nome do personagem</span><input class="inp" id="sentarPers" maxlength="80" placeholder="Pode decidir depois"></label>
+    <div class="modal-btns"><button class="btn ghost" id="sentarNao" type="button">Voltar</button><button class="btn" type="submit">Sentar</button></div>
+  </form>
+</div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -1012,7 +1023,7 @@ const ATRIBUTOS_PADRAO = ['Força', 'Destreza', 'Constituição', 'Inteligência
 const modDe = v => Math.floor((v - 10) / 2);
 function fichaVazia() {
   return {
-    nome: '', classe: '', raca: '', nivel: 1,
+    jogador: '', nome: '', classe: '', raca: '', nivel: 1,
     pv: 10, pvMax: 10, mana: 5, manaMax: 5, ca: 10, deslocamento: '9 m',
     atributos: ATRIBUTOS_PADRAO.map(n => ({ nome: n, valor: 10, mod: 0, modManual: false })),
     condicoes: [], pericias: [],
@@ -1060,7 +1071,7 @@ const bonusArmaduras = f => f.armaduras.filter(a => a.equipada).reduce((s, a) =>
 function normalizar(o) {
   const f = fichaVazia();
   if (!o || typeof o !== 'object') return f;
-  for (const k of ['nome', 'classe', 'raca', 'deslocamento', 'lore', 'notas']) if (k in o) f[k] = str(o[k]);
+  for (const k of ['jogador', 'nome', 'classe', 'raca', 'deslocamento', 'lore', 'notas']) if (k in o) f[k] = str(o[k]);
   for (const k of ['nivel', 'pv', 'pvMax', 'mana', 'manaMax', 'ca']) if (k in o) f[k] = num(o[k], f[k]);
   if (Array.isArray(o.atributos)) f.atributos = o.atributos.filter(a => a && typeof a === 'object').map(a => {
     const valor = num(a.valor, 10), manual = !!a.modManual;
@@ -1072,6 +1083,8 @@ function normalizar(o) {
   if (Array.isArray(o.condicoes)) f.condicoes = [...new Set(o.condicoes.map(str).map(s => s.trim()).filter(Boolean))];
   return f;
 }
+// nome de quem sentou no lugar; cai no nome fixo de JOGADORES enquanto ninguém se apresentou
+const nomeJog = (i, f) => (f && str(f.jogador).trim()) || JOGADORES[i] || `Jogador ${i + 1}`;
 function linhaVazia(lista) { const x = {}; for (const c of LISTAS[lista].campos) x[c.k] = valorCampo(c, undefined); return x; }
 
 /* ============================ estado ============================ */
@@ -1269,7 +1282,7 @@ function renderFicha() {
 }
 function atualizarCabecalho() {
   $('#hdrNome').textContent = ficha.nome.trim() || 'Personagem sem nome';
-  $('#hdrJog').textContent = JOGADORES[slot] ?? '';
+  $('#hdrJog').textContent = slot == null ? '' : nomeJog(slot, ficha);
 }
 function atualizarVitais() {
   for (const [k, max] of [['pv', 'pvMax'], ['mana', 'manaMax']]) {
@@ -1372,7 +1385,7 @@ function ligarFicha() {
       ficha[k] = el.dataset.t === 'num' ? num(el.value, 0) : el.value;
       if (['pv', 'pvMax', 'mana', 'manaMax'].includes(k)) atualizarVitais();
       if (k === 'ca') atualizarCA();
-      if (k === 'nome') atualizarCabecalho();
+      if (k === 'nome' || k === 'jogador') atualizarCabecalho();
       salvar(); return;
     }
     const card = el.closest('.attr');
@@ -1496,6 +1509,19 @@ function confirmar(titulo, msg, sim = 'Confirmar') {
     m.addEventListener('click', clique); document.addEventListener('keydown', tecla);
   });
 }
+// pede o nome do jogador e do personagem; resolve com { jogador, nome } ou null se voltar
+function pedirAssento(f) {
+  return new Promise(res => {
+    const m = $('#sentar'), form = $('#sentarForm'), jog = $('#sentarJog'), pers = $('#sentarPers');
+    jog.value = (f && f.jogador) || ''; pers.value = (f && f.nome) || '';
+    m.hidden = false; jog.focus();
+    const fim = v => { m.hidden = true; form.removeEventListener('submit', enviar); m.removeEventListener('click', clique); document.removeEventListener('keydown', tecla); res(v); };
+    const enviar = e => { e.preventDefault(); const j = jog.value.trim(); if (!j) { jog.focus(); return; } fim({ jogador: j, nome: pers.value.trim() }); };
+    const clique = e => { if (e.target.id === 'sentarNao' || e.target === m) fim(null); };
+    const tecla = e => { if (e.key === 'Escape') fim(null); };
+    form.addEventListener('submit', enviar); m.addEventListener('click', clique); document.addEventListener('keydown', tecla);
+  });
+}
 function toast(msg, tipo = '') {
   const t = document.createElement('div'); t.className = 'toast ' + tipo; t.textContent = msg;
   $('#toasts').appendChild(t);
@@ -1599,7 +1625,7 @@ function agendarNuvem() {
 async function enviarFicha() {
   clearTimeout(syncT); syncT = null;
   if (papel !== 'jogador' || slot == null || !nuvem.ligado()) return;
-  const s = slot, corpo = { ficha, t: store.get(kFichaT(s), Date.now()), jogador: JOGADORES[s] ?? '' };
+  const s = slot, corpo = { ficha, t: store.get(kFichaT(s), Date.now()), jogador: nomeJog(s, ficha) };
   try { await nuvem.req('PUT', `fichas/${s}`, corpo); estadoSalvo(null); }
   catch (e) { tratarErroNuvem(e); estadoSalvo('local'); }
 }
@@ -1625,7 +1651,7 @@ function normRolagem(r) {
 function publicarRolagem(r) {
   if (!nuvem.ligado()) return;
   const m = papel === 'mestre';
-  const reg = { ...r, slot: m ? -1 : slot, jogador: m ? 'Mestre' : (JOGADORES[slot] ?? ''), personagem: m ? '' : ficha.nome };
+  const reg = { ...r, slot: m ? -1 : slot, jogador: m ? 'Mestre' : nomeJog(slot, ficha), personagem: m ? '' : ficha.nome };
   nuvem.req('POST', 'rolagens', reg).catch(tratarErroNuvem);
 }
 
@@ -1686,7 +1712,7 @@ function renderMestre() {
 }
 function feedLocal() {
   const out = [];
-  JOGADORES.forEach((n, i) => (store.get(kHist(i), []) || []).forEach(r => out.push({ ...normRolagem(r), slot: i, jogador: n })));
+  JOGADORES.forEach((_, i) => { const n = nomeJog(i, store.get(kFicha(i), null)); (store.get(kHist(i), []) || []).forEach(r => out.push({ ...normRolagem(r), slot: i, jogador: n })); });
   (store.get(kHist('mestre'), []) || []).forEach(r => out.push({ ...normRolagem(r), slot: -1, jogador: 'Mestre' }));
   return out;
 }
@@ -1730,7 +1756,7 @@ function renderJogadores(fichas) {
   $('#pjGrid').innerHTML = JOGADORES.map((jog, i) => {
     const reg = fichas[i];
     if (!reg) return `<article class="pj"><h3>Assento livre</h3><p class="sub">${esc(jog)}</p></article>`;
-    const f = reg.f, b = bonusArmaduras(f);
+    const f = reg.f, b = bonusArmaduras(f); jog = nomeJog(i, f);
     const lista = (arr, fn) => arr.length ? arr.map(fn).join(' · ') : '<i>nenhum</i>';
     return `<article class="pj">
       <h3>${esc(f.nome || 'Sem nome')}</h3>
@@ -1855,14 +1881,18 @@ function mostrarPortao() {
   $('#gateSenha').value = ''; $('#gateErro').textContent = '';
   setTimeout(() => $('#gateSenha').focus(), 50);
 }
+const slotsFichas = {};
 function mostrarSlots() {
   $('#app').hidden = true; $('#gate').hidden = true;
   const romanos = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
   const desenhar = remotas => {
-    $('#slotGrid').innerHTML = JOGADORES.map((nome, i) => {
+    $('#slotGrid').innerHTML = JOGADORES.map((_, i) => {
       const f = (remotas && remotas[i]) || store.get(kFicha(i), null);
-      const sub = f && (f.nome || f.classe) ? [f.nome, f.classe].filter(Boolean).join(' · ') : 'Assento livre';
-      return `<button class="slot" type="button" data-slot="${i}"><span class="seal" aria-hidden="true">${romanos[i] || i + 1}</span><b>${esc(nome)}</b><span>${esc(sub)}</span></button>`;
+      slotsFichas[i] = f;
+      const jog = f && str(f.jogador).trim(), pers = f && [str(f.nome).trim(), str(f.classe).trim()].filter(Boolean).join(' · ');
+      const titulo = jog || (pers ? nomeJog(i, f) : 'Assento livre');
+      const sub = pers || (jog ? 'Personagem sem nome' : 'Toque para sentar');
+      return `<button class="slot" type="button" data-slot="${i}"><span class="seal" aria-hidden="true">${romanos[i] || i + 1}</span><b>${esc(titulo)}</b><span>${esc(sub)}</span></button>`;
     }).join('');
   };
   desenhar(null);
@@ -1873,6 +1903,16 @@ function mostrarSlots() {
     const rem = {}; for (const [k, v] of Object.entries(d || {})) if (v && v.ficha) rem[k] = v.ficha;
     desenhar(rem);
   }).catch(tratarErroNuvem);
+}
+// lugar sem nome de jogador: pergunta quem está sentando antes de abrir a ficha
+async function sentar(i) {
+  const f = slotsFichas[i];
+  if (f && str(f.jogador).trim()) { entrar(i); return; }
+  const r = await pedirAssento(f);
+  if (!r) { const b = $(`#slotGrid [data-slot="${i}"]`); if (b) b.focus(); return; }
+  entrar(i);
+  ficha.jogador = r.jogador; if (r.nome) ficha.nome = r.nome;
+  salvarAgora(); renderFicha();
 }
 function pararMestre() { clearInterval(timerMestre); timerMestre = null; document.body.classList.remove('mestre'); }
 function descarregar() {
@@ -1907,7 +1947,7 @@ function trocarJogador() {
 }
 async function resetarFicha() {
   fecharMenu();
-  const ok = await confirmar('Resetar ficha', `Apagar TODOS os dados da ficha de ${JOGADORES[slot]} (atributos, itens, magias, lore, notas...)? Isso não pode ser desfeito. Se quiser um backup, cancele e exporte o PDF antes.`, 'Apagar tudo');
+  const ok = await confirmar('Resetar ficha', `Apagar TODOS os dados da ficha de ${nomeJog(slot, ficha)} (atributos, itens, magias, lore, notas...)? Isso não pode ser desfeito. Se quiser um backup, cancele e exporte o PDF antes.`, 'Apagar tudo');
   if (!ok) return;
   ficha = fichaVazia(); salvarAgora(); renderFicha();
   toast('Ficha resetada. Uma página em branco para uma nova lenda.', 'ok');
@@ -2110,7 +2150,7 @@ async function exportarPDF() {
   fecharMenu(); if (saveT) salvarAgora();
   if (typeof PDFLib === 'undefined') { toast('A biblioteca de PDF não carregou.', 'erro'); return; }
   try {
-    const bytes = await gerarPDF(ficha, JOGADORES[slot] ?? `Jogador ${slot + 1}`);
+    const bytes = await gerarPDF(ficha, nomeJog(slot, ficha));
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `ficha-${slugArquivo(ficha.nome)}-${dataHoje()}.pdf`;
@@ -2139,7 +2179,7 @@ async function importarPDF(file) {
     toast('Arquivo inválido: este PDF não contém uma ficha exportada por este site.', 'erro'); return;
   }
   const nova = normalizar(obj.ficha);
-  const ok = await confirmar('Importar ficha', `Substituir a ficha atual de ${JOGADORES[slot]} por "${nova.nome || 'Personagem sem nome'}"? O que está salvo agora será sobrescrito.`, 'Substituir');
+  const ok = await confirmar('Importar ficha', `Substituir a ficha atual de ${nomeJog(slot, ficha)} por "${nova.nome || 'Personagem sem nome'}"? O que está salvo agora será sobrescrito.`, 'Substituir');
   if (!ok) return;
   ficha = nova; salvarAgora(); renderFicha();
   toast('Ficha restaurada com sucesso!', 'ok');
@@ -2185,7 +2225,7 @@ function iniciar() {
     }, movReduzido.matches ? 0 : 1150);
   });
 
-  $('#slotGrid').addEventListener('click', e => { const b = e.target.closest('[data-slot]'); if (b) entrar(+b.dataset.slot); });
+  $('#slotGrid').addEventListener('click', e => { const b = e.target.closest('[data-slot]'); if (b) sentar(+b.dataset.slot); });
   $('#slotsSair').addEventListener('click', sair);
 
   $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); const a = $('#acoes').classList.toggle('aberto'); $('#menuBtn').setAttribute('aria-expanded', String(a)); });
