@@ -1040,7 +1040,8 @@ const LISTAS = {
   pericias: { add: 'perícia', vazio: 'Nenhuma perícia. Monte a lista do seu sistema: Atletismo, Furtividade, Percepção...', acoes: 'pericia', campos: [
     { k: 'nome', rot: 'Perícia', w: 'w6 dw3', ph: 'Percepção' },
     { k: 'atributo', rot: 'Atributo', w: 'w3 dw2', t: 'sel', opcoes: () => ficha.atributos.map(a => a.nome).filter(Boolean) },
-    { k: 'bonus', rot: 'Bônus', w: 'w3 dw1', t: 'mod', def: 0 } ] },
+    { k: 'bonus', rot: 'Bônus', w: 'w3 dw1', t: 'mod', def: 0 },
+    { k: 'desc', rot: 'Descrição', w: 'w6', t: 'area', ph: 'Quando usar, vantagens, observações...' } ] },
   itens: { add: 'item', vazio: 'A bolsa está vazia. Nem um pedaço de pão duro...', campos: [
     { k: 'nome', rot: 'Nome', w: 'w4', ph: 'Corda de cânhamo (15 m)' },
     { k: 'qtd', rot: 'Qtd.', w: 'w2', t: 'num', def: 1 },
@@ -1062,7 +1063,8 @@ const LISTAS = {
     { k: 'nome', rot: 'Nome', w: 'w6 dw2', ph: 'Espada longa' },
     { k: 'acerto', rot: 'Acerto', w: 'w2 dw1', t: 'mod', def: 0 },
     { k: 'dano', rot: 'Dano', w: 'w4 dw1', ph: '1d8+3' },
-    { k: 'tipo', rot: 'Tipo de dano', w: 'w6 dw2', t: 'sel', opcoes: TIPOS_DANO } ] }
+    { k: 'tipo', rot: 'Tipo de dano', w: 'w6 dw2', t: 'sel', opcoes: TIPOS_DANO },
+    { k: 'desc', rot: 'Descrição', w: 'w6', t: 'area', ph: 'Alcance, propriedades, efeitos extras...' } ] }
 };
 function valorCampo(c, v) { return ehNum(c) ? num(v, c.def ?? 0) : c.t === 'bool' ? (v === undefined ? (c.def ?? false) : !!v) : str(v); }
 const modAtributo = (nome, f = ficha) => { const n = String(nome || '').trim().toLowerCase(); const a = f.atributos.find(x => x.nome.trim().toLowerCase() === n); return a ? a.mod : 0; };
@@ -2120,11 +2122,11 @@ async function gerarPDF(f, jogador) {
     });
     y -= 4;
   }
-  listar('Perícias', f.pericias, r => r.nome, r => `${r.atributo ? r.atributo + ' ' + fmtMod(modAtributo(r.atributo, f)) + '  ·  ' : ''}Bônus ${fmtMod(r.bonus)}  ·  Total ${fmtMod(totalPericia(r, f))}`, () => '', 'Nenhuma perícia.');
+  listar('Perícias', f.pericias, r => r.nome, r => `${r.atributo ? r.atributo + ' ' + fmtMod(modAtributo(r.atributo, f)) + '  ·  ' : ''}Bônus ${fmtMod(r.bonus)}  ·  Total ${fmtMod(totalPericia(r, f))}`, r => r.desc, 'Nenhuma perícia.');
   listar('Itens', f.itens, r => r.nome, r => `Qtd. ${r.qtd}`, r => r.desc, 'Nenhum item.');
   listar('Armadura', f.armaduras, r => r.nome, r => [r.slot && `Slot: ${r.slot}`, `CA ${fmtMod(r.ca)}`, r.equipada ? 'equipada' : 'guardada'].filter(Boolean).join('  ·  '), r => r.obs, 'Nenhuma armadura.');
   listar('Magias', f.magias, r => r.nome, r => [r.nivel && `Nível ${r.nivel}`, r.custo && `Custo ${r.custo}`, r.dano && `Dano ${r.dano}${r.tipo ? ' ' + r.tipo.toLowerCase() : ''}`].filter(Boolean).join('  ·  '), r => r.desc, 'Nenhuma magia.');
-  listar('Ataques', f.ataques, r => r.nome, r => `Acerto ${fmtMod(r.acerto)}  ·  Dano ${r.dano || '-'}${r.tipo ? ' ' + r.tipo.toLowerCase() : ''}`, () => '', 'Nenhum ataque.');
+  listar('Ataques', f.ataques, r => r.nome, r => `Acerto ${fmtMod(r.acerto)}  ·  Dano ${r.dano || '-'}${r.tipo ? ' ' + r.tipo.toLowerCase() : ''}`, r => r.desc, 'Nenhum ataque.');
 
   for (const [tit, txt] of [['Lore', f.lore], ['Bloco de Notas', f.notas]]) {
     secao(tit);
