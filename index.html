@@ -350,6 +350,20 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 @keyframes bolhas{from{background-position:0 0,0 0}to{background-position:0 -60px,0 -52px}}
 .vial-txt{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-title);font-weight:700;font-size:1rem;color:#fff6e0;text-shadow:0 1px 2px #000,0 0 6px rgba(0,0,0,.8);letter-spacing:.05em}
 .vital.baixo .liquid{animation:pulsa 1.3s ease-in-out infinite}
+/* sanidade: cérebro que enche de baixo para cima */
+.cerebro{position:relative;width:min(100%,190px);margin:0 auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+.cerebro svg{display:block;width:100%;height:auto;overflow:visible}
+.cerebro .nivel{transform:translateY(100px);transition:transform .8s cubic-bezier(.3,1.35,.5,1)}
+.cerebro-borda{fill:none;stroke:#5a4220;stroke-width:3.5;stroke-linejoin:round}
+.cerebro-dobra{fill:none;stroke:rgba(40,20,40,.55);stroke-width:1.8;stroke-linecap:round}
+.cerebro .vial-txt{font-size:1.1rem}
+.vital.san.baixo .cerebro svg{animation:pulsa 1.3s ease-in-out infinite}
+@media(min-width:620px){
+  .vital.san{grid-column:1/-1;display:grid;grid-template-columns:170px minmax(0,440px);grid-template-areas:"cer head" "cer ctl";column-gap:28px;align-content:center;justify-content:center}
+  .vital.san .vital-head{grid-area:head;align-self:end}
+  .vital.san .cerebro{grid-area:cer}
+  .vital.san .vital-ctl{grid-area:ctl;align-self:start}
+}
 @keyframes pulsa{50%{filter:brightness(1.4) saturate(1.3)}}
 .vital-ctl{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:12px}
 .vital-ctl .btn{width:44px;padding:0;font-size:.85rem}
@@ -603,6 +617,7 @@ select.inp{appearance:auto;padding:6px 4px}
 .minibar i{display:block;height:100%;border-radius:5px;transition:width .6s}
 .minibar.pv i{background:linear-gradient(90deg,#7d0f0a,#d23a2c)}
 .minibar.mana i{background:linear-gradient(90deg,#1d3f7d,#5d8fd6)}
+.minibar.san i{background:linear-gradient(90deg,#4a1459,#b45ccc)}
 .pj .chips{gap:5px;margin-top:8px}
 .pj .chip{min-height:26px;padding:1px 9px;font-size:.85rem;pointer-events:none}
 .pj details{margin-top:10px;font-size:.98rem}
@@ -799,6 +814,32 @@ select.inp{appearance:auto;padding:6px 4px}
                 <span class="vital-nums"><input class="inp" data-f="mana" data-t="num" type="number" inputmode="numeric" aria-label="Mana atual">/<input class="inp" data-f="manaMax" data-t="num" type="number" inputmode="numeric" aria-label="Mana máxima"></span>
                 <button class="btn sm moss" type="button" data-adj="mana" data-d="1" aria-label="Mais 1 de mana">+1</button>
                 <button class="btn sm moss" type="button" data-adj="mana" data-d="5" aria-label="Mais 5 de mana">+5</button>
+              </div>
+            </div>
+            <div class="vital san" data-v="san">
+              <div class="vital-head"><span class="lbl">Sanidade</span><span class="vital-pct" data-pct></span></div>
+              <div class="cerebro" role="meter" aria-label="Sanidade" aria-valuemin="0">
+                <svg viewBox="0 0 120 100" aria-hidden="true">
+                  <defs>
+                    <clipPath id="clipCerebro"><path d="M24 58C10 54 6 36 18 26 22 12 42 4 58 8 70 2 92 6 100 18 114 22 118 40 110 52 114 62 106 72 96 72 92 80 80 84 72 78L70 92C69 96 63 96 62 92L62 78C54 82 42 80 38 72 30 74 22 68 24 58Z"/></clipPath>
+                    <linearGradient id="gradSan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3b6ff"/><stop offset=".35" stop-color="#b45ccc"/><stop offset=".8" stop-color="#6a2380"/><stop offset="1" stop-color="#4a1459"/></linearGradient>
+                  </defs>
+                  <g clip-path="url(#clipCerebro)">
+                    <rect width="120" height="100" fill="rgba(55,28,48,.6)"/>
+                    <rect class="nivel" width="120" height="100" fill="url(#gradSan)"/>
+                    <rect class="nivel" width="120" height="3" fill="rgba(255,255,255,.45)"/>
+                  </g>
+                  <path class="cerebro-borda" d="M24 58C10 54 6 36 18 26 22 12 42 4 58 8 70 2 92 6 100 18 114 22 118 40 110 52 114 62 106 72 96 72 92 80 80 84 72 78L70 92C69 96 63 96 62 92L62 78C54 82 42 80 38 72 30 74 22 68 24 58Z"/>
+                  <path class="cerebro-dobra" d="M30 60C44 52 58 54 74 50M62 9C58 22 66 32 60 46M40 14C38 26 46 30 42 40M86 10C80 22 90 28 84 40M20 34C28 36 30 44 26 50M100 26C94 32 102 40 96 46M44 66C50 62 58 66 64 62M76 70C84 66 94 68 102 62M80 76C86 74 92 75 96 72M50 28C56 30 54 38 50 42M74 22C70 30 76 36 72 44"/>
+                </svg>
+                <div class="vial-txt" data-txt></div>
+              </div>
+              <div class="vital-ctl">
+                <button class="btn sm" type="button" data-adj="san" data-d="-5" aria-label="Menos 5 de sanidade">−5</button>
+                <button class="btn sm" type="button" data-adj="san" data-d="-1" aria-label="Menos 1 de sanidade">−1</button>
+                <span class="vital-nums"><input class="inp" data-f="san" data-t="num" type="number" inputmode="numeric" aria-label="Sanidade atual">/<input class="inp" data-f="sanMax" data-t="num" type="number" inputmode="numeric" aria-label="Sanidade máxima"></span>
+                <button class="btn sm moss" type="button" data-adj="san" data-d="1" aria-label="Mais 1 de sanidade">+1</button>
+                <button class="btn sm moss" type="button" data-adj="san" data-d="5" aria-label="Mais 5 de sanidade">+5</button>
               </div>
             </div>
           </div>
@@ -1024,7 +1065,7 @@ const modDe = v => Math.floor((v - 10) / 2);
 function fichaVazia() {
   return {
     jogador: '', nome: '', classe: '', raca: '', nivel: 1,
-    pv: 10, pvMax: 10, mana: 5, manaMax: 5, ca: 10, deslocamento: '9 m',
+    pv: 10, pvMax: 10, mana: 5, manaMax: 5, san: 10, sanMax: 10, ca: 10, deslocamento: '9 m',
     atributos: ATRIBUTOS_PADRAO.map(n => ({ nome: n, valor: 10, mod: 0, modManual: false })),
     condicoes: [], pericias: [],
     itens: [], armaduras: [], magias: [], ataques: [], lore: '', notas: ''
@@ -1074,7 +1115,7 @@ function normalizar(o) {
   const f = fichaVazia();
   if (!o || typeof o !== 'object') return f;
   for (const k of ['jogador', 'nome', 'classe', 'raca', 'deslocamento', 'lore', 'notas']) if (k in o) f[k] = str(o[k]);
-  for (const k of ['nivel', 'pv', 'pvMax', 'mana', 'manaMax', 'ca']) if (k in o) f[k] = num(o[k], f[k]);
+  for (const k of ['nivel', 'pv', 'pvMax', 'mana', 'manaMax', 'san', 'sanMax', 'ca']) if (k in o) f[k] = num(o[k], f[k]);
   if (Array.isArray(o.atributos)) f.atributos = o.atributos.filter(a => a && typeof a === 'object').map(a => {
     const valor = num(a.valor, 10), manual = !!a.modManual;
     return { nome: str(a.nome), valor, mod: manual ? num(a.mod, modDe(valor)) : modDe(valor), modManual: manual };
@@ -1287,13 +1328,15 @@ function atualizarCabecalho() {
   $('#hdrJog').textContent = slot == null ? '' : nomeJog(slot, ficha);
 }
 function atualizarVitais() {
-  for (const [k, max] of [['pv', 'pvMax'], ['mana', 'manaMax']]) {
+  for (const [k, max] of [['pv', 'pvMax'], ['mana', 'manaMax'], ['san', 'sanMax']]) {
     const box = $(`.vital[data-v="${k}"]`), atual = ficha[k], m = ficha[max];
     const pct = m > 0 ? Math.max(0, Math.min(1, atual / m)) : 0;
-    $('.liquid', box).style.width = `calc(${(pct * 100).toFixed(1)}% - ${pct * 6}px)`;
+    const liq = $('.liquid', box);
+    if (liq) liq.style.width = `calc(${(pct * 100).toFixed(1)}% - ${pct * 6}px)`;
+    $$('.nivel', box).forEach(el => { el.style.transform = `translateY(${((1 - pct) * 100).toFixed(1)}px)`; }); // px = unidades do viewBox (altura 100)
     $('[data-txt]', box).textContent = `${atual} / ${m}`;
     $('[data-pct]', box).textContent = `${Math.round(pct * 100)}%`;
-    const vial = $('.vial', box); vial.setAttribute('aria-valuenow', atual); vial.setAttribute('aria-valuemax', m);
+    const vial = $('[role=meter]', box); vial.setAttribute('aria-valuenow', atual); vial.setAttribute('aria-valuemax', m);
     box.classList.toggle('baixo', pct <= 0.25);
   }
 }
@@ -1385,7 +1428,7 @@ function ligarFicha() {
     if (el.dataset.f) {
       const k = el.dataset.f;
       ficha[k] = el.dataset.t === 'num' ? num(el.value, 0) : el.value;
-      if (['pv', 'pvMax', 'mana', 'manaMax'].includes(k)) atualizarVitais();
+      if (['pv', 'pvMax', 'mana', 'manaMax', 'san', 'sanMax'].includes(k)) atualizarVitais();
       if (k === 'ca') atualizarCA();
       if (k === 'nome' || k === 'jogador') atualizarCabecalho();
       salvar(); return;
@@ -1765,6 +1808,7 @@ function renderJogadores(fichas) {
       <p class="sub">${esc(jog)} · ${esc([f.classe, f.raca].filter(Boolean).join(' ') || 'sem classe')} · Nv ${f.nivel}</p>
       <div class="mini"><span class="lbl">PV</span>${barra(f.pv, f.pvMax, 'pv')}<b>${f.pv}/${f.pvMax}</b></div>
       <div class="mini"><span class="lbl">Mana</span>${barra(f.mana, f.manaMax, 'mana')}<b>${f.mana}/${f.manaMax}</b></div>
+      <div class="mini"><span class="lbl">San</span>${barra(f.san, f.sanMax, 'san')}<b>${f.san}/${f.sanMax}</b></div>
       <div class="mini"><span class="lbl">CA</span><span>${b ? `<small>base ${f.ca} ${fmtMod(b)}</small>` : ''}</span><b>${f.ca + b}</b></div>
       ${f.condicoes.length ? `<div class="chips">${f.condicoes.map(c => `<span class="chip" aria-pressed="true">${esc(c)}</span>`).join('')}</div>` : ''}
       <details data-slot="${i}"${abertos.has(String(i)) ? ' open' : ''}><summary>Ver ficha completa</summary>
@@ -2065,7 +2109,7 @@ async function gerarPDF(f, jogador) {
   // --- status
   secao('Status');
   const bArm = bonusArmaduras(f);
-  const stats = [['Pontos de Vida', `${f.pv} / ${f.pvMax}`], ['Mana / Energia', `${f.mana} / ${f.manaMax}`], ['Classe de Armadura', bArm ? `${f.ca + bArm}  (base ${f.ca} ${fmtMod(bArm)})` : String(f.ca)],['Deslocamento', f.deslocamento || '-'], ['Classe', f.classe || '-'], ['Raça', f.raca || '-']];
+  const stats = [['Pontos de Vida', `${f.pv} / ${f.pvMax}`], ['Mana / Energia', `${f.mana} / ${f.manaMax}`], ['Sanidade', `${f.san} / ${f.sanMax}`],['Classe de Armadura', bArm ? `${f.ca + bArm}  (base ${f.ca} ${fmtMod(bArm)})` : String(f.ca)],['Deslocamento', f.deslocamento || '-'], ['Classe', f.classe || '-'], ['Raça', f.raca || '-']];
   const colW = LW / 3;
   for (let i = 0; i < stats.length; i += 3) {
     garantir(40); y -= 14;
